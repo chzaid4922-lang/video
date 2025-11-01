@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en" class="dark"> <!-- Default to dark mode, can be changed -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 Video Tracker Dashboard</title>
+
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 2. Font Awesome Icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js"
+        xintegrity="sha512-u3fPA7V8qQmhBPNT5quvaXVa1mnnLSXUep5PS1qo5NRzHwG19aHmNJnj1Q8hpA/ikfsmdEBFQB22VjSVxUSeGg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- 3. Google Font (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 4. Custom Tailwind Configuration & Styles -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode using a class on <html>
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        modalFadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        modalSlideIn: {
+                             '0%': { opacity: '0', transform: 'translateY(-20px) scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        }
+                    },
+                    animation: {
+                        fadeInUp: 'fadeInUp 0.3s ease-out',
+                        modalFadeIn: 'modalFadeIn 0.2s ease-out',
+                        modalSlideIn: 'modalSlideIn 0.3s ease-out',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 5. Embedded CSS Styles -->
+    <style>
+        /* Apply the Inter font globally */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Smooth transitions for dark mode */
+        body,
+        .modal-content,
+        .modal-overlay {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #2d3748;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a0aec0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+             background: #718096;
+        }
+
+        /* Ensure table layout is fixed on larger screens for consistent column widths */
+        @media (min-width: 1024px) {
+            .table-fixed-layout {
+                table-layout: fixed;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen antialiased">
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Header: Title + Dark Mode Toggle -->
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                🎬 Video Tracker Dashboard
+            </h1>
+            <button id="dark-mode-toggle"
+                class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all">
+                <i class="fas fa-moon w-5 h-5 block dark:hidden"></i>
+                <i class="fas fa-sun w-5 h-5 hidden dark:block"></i>
+            </button>
+        </header>
+
+        <!-- Summary Panel -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <!-- Total Videos -->
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md transition-all">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300">
+                        <i class="fas fa-video w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Videos</p>
+                        <p id="stats-total" class="text-2xl font-bold">0</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Completed -->
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md transition-all">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300">
+                        <i class="fas fa-check-circle w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Completed</p>
+                        <p id="stats-completed" class="text-2xl font-bold">0</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Pending -->
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md transition-all">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300">
+                        <i class="fas fa-clock w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</p>
+                        <p id="stats-pending" class="text-2xl font-bold">0</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Amount Due -->
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md transition-all">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300">
+                        <i class="fas fa-dollar-sign w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount Due</video>
+                        <p id="stats-amount-due" class="text-2xl font-bold">$0.00</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controls: Search, Filter, Add -->
+        <section class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <!-- Search -->
+                <div class="relative flex-grow sm:max-w-xs">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="search" id="search-bar" placeholder="Search by video name..."
+                        class="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                </div>
+
+                <!-- Filters -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <select id="filter-video-status"
+                        class="w-full sm:w-auto rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <option value="all">All Video Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                        <option value="Revision">Revision</option>
+                    </select>
+                    <select id="filter-payment-status"
+                        class="w-full sm:w-auto rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <option value="all">All Payment Status</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Remaining">Remaining</option>
+                    </select>
+                </div>
+                
+                <!-- NEW: Export CSV Button -->
+                <button id="export-csv-button"
+                    class="hidden sm:flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all">
+                    <i class="fas fa-file-csv"></i>
+                    <span>Export CSV</span>
+                </button>
+
+                <!-- Add New Button (Desktop) -->
+                <button id="add-new-button-desktop"
+                    class="hidden sm:flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Video</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Video Table -->
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[768px] divide-y divide-gray-200 dark:divide-gray-700 table-fixed-layout"> <!-- Increased min-width -->
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col"
+                                class="w-3/12 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Video Name</th>
+                            <th scope="col"
+                                class="w-2/12 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Video Status</th>
+                            <th scope="col"
+                                class="w-2/12 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Payment Status</th>
+                            <th scope="col"
+                                class="w-1/12 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"> <!-- Changed width -->
+                                Amount</th>
+                            <!-- NEW: Priority Column -->
+                            <th scope="col"
+                                class="w-1/12 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Priority</th>
+                            <th scope="col"
+                                class="w-2/12 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Drive Link</th>
+                            <th scope="col"
+                                class="w-1/12 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"> <!-- Changed width -->
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="video-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <!-- Rows will be injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center p-12">
+                <i class="fas fa-folder-open fa-3x text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-500 dark:text-gray-400">No videos found.</h3>
+                <p class="text-sm text-gray-400 dark:text-gray-500">Get started by adding a new video.</p>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ===== FLOATING ADD BUTTON (Mobile) ===== -->
+    <button id="add-new-button-mobile"
+        class="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all">
+        <i class="fas fa-plus fa-lg"></i>
+    </button>
+
+
+    <!-- ===== MODAL (Add/Edit Video) ===== -->
+    <div id="video-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden animate-modalFadeIn"
+        aria-labelledby="modal-title" role="dialog" aria-modal="true">
+
+        <!-- Modal Overlay -->
+        <div id="modal-overlay" class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm"></div>
+
+        <!-- Modal Content -->
+        <div
+            class="modal-content relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-auto animate-modalSlideIn">
+            <form id="video-form" class="p-6">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="modal-title" class="text-xl font-semibold">Add New Video</h2>
+                    <button type="button" id="modal-close-button"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Form Fields -->
+                <input type="hidden" id="video-id">
+                <div class="space-y-4">
+                    <!-- Video Name -->
+                    <div>
+                        <label for="video-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Video
+                            Name</label>
+                        <input type="text" id="video-name" name="video-name" required
+                            class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                            placeholder="e.g., 'Top 10 AI Tools'">
+                    </div>
+
+                    <!-- Google Drive Link -->
+                    <div>
+                        <label for="video-link"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Google Drive
+                            Link</label>
+                        <input type="url" id="video-link" name="video-link"
+                            class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                            placeholder="https_//drive.google.com/...">
+                    </div>
+
+                    <!-- ✨ Gemini Feature: Generate Description -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="video-notes"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes /
+                                Description</label>
+                            <button type="button" id="generate-description-button"
+                                class="flex items-center gap-2 px-3 py-1 text-xs font-medium rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                <span class="gemini-button-text">✨ Generate</span>
+                                <!-- Loading Spinner -->
+                                <svg class="animate-spin h-4 w-4 text-indigo-700 dark:text-indigo-300 hidden"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                            </button>
+                        </div>
+                        <textarea id="video-notes" name="video-notes" rows="6"
+                            class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                            placeholder="Add video notes, script outline, or description here..."></textarea>
+                    </div>
+
+                    <!-- Statuses (Video & Payment) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4"> <!-- Changed to grid-cols-3 -->
+                        <div>
+                            <label for="video-status"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Video
+                                Status</label>
+                            <select id="video-status" name="video-status"
+                                class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                                <option>Pending</option>
+                                <option>In Progress</option>
+                                <option>Done</option>
+                                <option>Revision</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="payment-status"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment
+                                Status</label>
+                            <select id="payment-status" name="payment-status"
+                                class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                                <option>Remaining</option>
+                                <option>Paid</option>
+                            </select>
+                        </div>
+                        <!-- NEW: Priority Dropdown -->
+                        <div>
+                            <label for="video-priority"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                            <select id="video-priority" name="video-priority"
+                                class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Payment Amount -->
+                    <div>
+                        <label for="payment-amount"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment
+                            Amount</label>
+                        <div class="relative rounded-md shadow-sm">
+                            <div
+                                class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                <span class="text-gray-500 dark:text-gray-400 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" id="payment-amount" name="payment-amount"
+                                class="w-full pl-7 pr-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                placeholder="0.00" step="0.01" min="0">
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Modal Footer (Buttons) -->
+                <div class="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
+                    <button type="button" id="modal-cancel-button"
+                        class="w-full sm:w-auto mt-2 sm:mt-0 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="w-full sm:w-auto px-4 py-2 rounded-md border border-transparent bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all">
+                        Save Video
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ===== JAVASCRIPT ===== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- STATE & CONSTANTS ---
+            let videos = [];
+            const STORAGE_KEY = 'videoTrackerVideos';
+            const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=`; // Key is empty string
+
+            // --- SELECTORS ---
+            const tableBody = document.getElementById('video-table-body');
+            const emptyState = document.getElementById('empty-state');
+            
+            // Modals
+            const modal = document.getElementById('video-modal');
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalTitle = document.getElementById('modal-title');
+            const videoForm = document.getElementById('video-form');
+            const videoIdInput = document.getElementById('video-id');
+            const videoNameInput = document.getElementById('video-name');
+            const videoLinkInput = document.getElementById('video-link');
+            const videoStatusInput = document.getElementById('video-status');
+            const paymentStatusInput = document.getElementById('payment-status');
+            const paymentAmountInput = document.getElementById('payment-amount'); // New
+            const videoPriorityInput = document.getElementById('video-priority'); // NEW
+            
+            // ✨ Gemini Feature Selectors
+            const videoNotesInput = document.getElementById('video-notes');
+            const generateDescButton = document.getElementById('generate-description-button');
+            const geminiButtonText = generateDescButton.querySelector('.gemini-button-text');
+            const geminiButtonSpinner = generateDescButton.querySelector('svg');
+
+            // Buttons
+            const addNewButtonDesktop = document.getElementById('add-new-button-desktop');
+            const addNewButtonMobile = document.getElementById('add-new-button-mobile');
+            const modalCloseButton = document.getElementById('modal-close-button');
+            const modalCancelButton = document.getElementById('modal-cancel-button');
+            
+            // Stats
+            const statsTotal = document.getElementById('stats-total');
+            const statsCompleted = document.getElementById('stats-completed');
+            const statsPending = document.getElementById('stats-pending');
+            const statsAmountDue = document.getElementById('stats-amount-due'); // Renamed
+            const exportCsvButton = document.getElementById('export-csv-button'); // NEW
+
+            // Filters & Search
+            const searchBar = document.getElementById('search-bar');
+            const filterVideoStatus = document.getElementById('filter-video-status');
+            const filterPaymentStatus = document.getElementById('filter-payment-status');
+
+            // Dark Mode
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+            // --- HELPER FUNCTIONS ---
+
+            /**
+             * Gets the Tailwind CSS classes for a given video status.
+             * @param {string} status - The video status (e.g., 'Done', 'Pending').
+             * @returns {string} - The corresponding Tailwind classes.
+             */
+            const getVideoStatusBadge = (status) => {
+                const baseClasses = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full';
+                switch (status) {
+                    case 'Done':
+                        return `${baseClasses} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`;
+                    case 'In Progress':
+                        return `${baseClasses} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`;
+                    case 'Revision':
+                        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200`;
+                    case 'Pending':
+                    default:
+                        return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`;
+                }
+            };
+
+            /**
+             * NEW: Gets Tailwind CSS classes and icon for a given priority.
+             * @param {string} priority - The priority status ('High', 'Medium', 'Low').
+             * @returns {string} - The corresponding HTML for the icon.
+             */
+            const getPriorityBadge = (priority) => {
+                switch (priority) {
+                    case 'High':
+                        return `<i class="fas fa-flag text-red-500 dark:text-red-400" title="High Priority"></i><span class="sr-only">High</span>`;
+                    case 'Low':
+                        return `<i class="fas fa-flag text-green-500 dark:text-green-400" title="Low Priority"></i><span class="sr-only">Low</span>`;
+                    case 'Medium':
+                    default:
+                        return `<i class="fas fa-flag text-yellow-500 dark:text-yellow-400" title="Medium Priority"></i><span class="sr-only">Medium</span>`;
+                }
+            };
+
+            /**
+             * Formats a URL for display (truncates if long).
+             * @param {string} url - The URL string.
+             * @returns {string} - A formatted URL string.
+             */
+            const formatUrl = (url) => {
+                if (!url) return 'No Link';
+                try {
+                    const parsedUrl = new URL(url);
+                    // Shorten to hostname + first path part
+                    let path = parsedUrl.pathname.split('/')[1];
+                    path = path.length > 15 ? path.substring(0, 15) + '...' : path;
+                    if (path) {
+                        return `${parsedUrl.hostname}/${path}`;
+                    }
+                    return parsedUrl.hostname;
+                } catch (e) {
+                    // Handle invalid URLs
+                    return url.length > 30 ? url.substring(0, 30) + '...' : url;
+                }
+            };
+
+            // --- ✨ GEMINI API FUNCTIONS ---
+
+            /**
+             * Retries a failed fetch request with exponential backoff.
+             * @param {Function} fn - The async function to retry (e.g., fetch).
+             * @param {number} maxRetries - Maximum number of retries.
+             * @returns {Promise<any>}
+             */
+            const exponentialBackoff = async (fn, maxRetries = 5) => {
+                let attempt = 0;
+                while (attempt < maxRetries) {
+                    try {
+                        return await fn();
+                    } catch (error) {
+                        attempt++;
+                        if (attempt >= maxRetries) throw error;
+                        // Full jitter exponential backoff
+                        const delay = Math.pow(2, attempt) * 100 + Math.random() * 100;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            };
+
+            /**
+             * Calls the Gemini API to generate content.
+             * @param {string} prompt - The prompt to send to the model.
+             * @returns {Promise<string>} - The generated text.
+             */
+            const callGeminiApi = async (prompt) => {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    systemInstruction: {
+                        parts: [{ text: "You are a helpful YouTube content assistant. Your responses should be concise, well-formatted, and directly usable by a content creator." }]
+                    },
+                };
+
+                const fn = async () => {
+                    // NOTE: The API key is left as an empty string ""
+                    // It will be automatically populated by the environment.
+                    const response = await fetch(GEMINI_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        // Don't log retries as errors in the console
+                        if (response.status === 429 || response.status >= 500) {
+                             throw new Error(`API retryable error: ${response.status}`);
+                        }
+                        // Log non-retryable errors
+                        console.error(`API request failed with status ${response.status}`);
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+                    return response.json();
+                };
+
+                try {
+                    const result = await exponentialBackoff(fn);
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    if (!text) {
+                        console.error("Invalid response structure from API:", result);
+                        throw new Error("Invalid response structure from API.");
+                    }
+                    return text;
+                } catch (error) {
+                    console.error("Gemini API call failed after retries:", error);
+                    throw error; // Re-throw to be caught by the handler
+                }
+            };
+
+            /**
+             * Sets the loading state for the Gemini button.
+             * @param {boolean} isLoading - True to show loading, false to hide.
+             * @param {string} [text] - Optional text to set on the button.
+             */
+            const setGeminiButtonLoading = (isLoading, text = "✨ Generate") => {
+                if (isLoading) {
+                    geminiButtonText.textContent = "Generating...";
+                    generateDescButton.disabled = true;
+                    geminiButtonSpinner.classList.remove('hidden');
+                } else {
+                    geminiButtonText.textContent = text;
+                    // Re-enable button only if video name is present
+                    generateDescButton.disabled = !videoNameInput.value.trim(); 
+                    geminiButtonSpinner.classList.add('hidden');
+                }
+            };
+
+
+            // --- CORE FUNCTIONS ---
+
+            /**
+             * Loads videos from localStorage into the `videos` state array.
+             */
+            const loadVideos = () => {
+                const savedVideos = localStorage.getItem(STORAGE_KEY);
+                videos = savedVideos ? JSON.parse(savedVideos) : [];
+            };
+
+            /**
+             * Saves the current `videos` state array to localStorage.
+             */
+            const saveVideos = () => {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(videos));
+            };
+
+            /**
+             * Updates the summary statistics panel.
+             * @param {Array} currentVideos - The array of videos to calculate stats from.
+             */
+            const updateStats = (currentVideos) => {
+                const total = currentVideos.length;
+                const completed = currentVideos.filter(v => v.videoStatus === 'Done').length;
+                const pending = currentVideos.filter(v => v.videoStatus === 'Pending' || v.videoStatus === 'In Progress').length;
+                // Sum the amount for videos marked as 'Remaining'
+                const amountDue = currentVideos
+                    .filter(v => v.paymentStatus === 'Remaining')
+                    .reduce((sum, video) => sum + (parseFloat(video.paymentAmount) || 0), 0);
+
+                statsTotal.textContent = total;
+                statsCompleted.textContent = completed;
+                statsPending.textContent = pending;
+                statsAmountDue.textContent = `$${amountDue.toFixed(2)}`; // Updated
+            };
+
+            /**
+             * Renders the video table based on the current state, filters, and search.
+             */
+            const renderTable = () => {
+                // Get current filter and search values
+                const searchTerm = searchBar.value.toLowerCase();
+                const videoStatusFilter = filterVideoStatus.value;
+                const paymentStatusFilter = filterPaymentStatus.value;
+
+                // Apply filters
+                const filteredVideos = videos.filter(video => {
+                    const nameMatch = video.name.toLowerCase().includes(searchTerm);
+                    const videoStatusMatch = (videoStatusFilter === 'all') || (video.videoStatus === videoStatusFilter);
+                    const paymentStatusMatch = (paymentStatusFilter === 'all') || (video.paymentStatus === paymentStatusFilter);
+                    
+                    return nameMatch && videoStatusMatch && paymentStatusMatch;
+                });
+                
+                // Clear current table
+                tableBody.innerHTML = '';
+
+                // Show/hide empty state
+                if (filteredVideos.length === 0) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                }
+
+                // Populate table
+                filteredVideos.forEach(video => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'animate-fadeInUp';
+                    tr.dataset.id = video.id;
+
+                    const linkHtml = video.link
+                        ? `<a href="${video.link}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline" title="${video.link}">
+                                ${formatUrl(video.link)} <i class="fas fa-external-link-alt fa-xs ml-1"></i>
+                           </a>`
+                        : `<span class="text-gray-400 dark:text-gray-500">N/A</span>`;
+                    
+                    const paymentAmount = parseFloat(video.paymentAmount) || 0;
+                    const paymentAmountHtml = paymentAmount > 0 
+                        ? `$${paymentAmount.toFixed(2)}`
+                        : `<span class="text-gray-400 dark:text-gray-500">N/A</span>`;
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium truncate" title="${video.name}">${video.name}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="${getVideoStatusBadge(video.videoStatus)}">
+                                ${video.videoStatus}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowW-rap text-sm font-medium">
+                            ${paymentAmountHtml}
+                        </td>
+                        <!-- NEW: Priority Cell -->
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            ${getPriorityBadge(video.priority)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm truncate">
+                            ${linkHtml}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"> <!-- Reduced space for actions -->
+                            ${video.videoStatus !== 'Done' ?
+                                `<button class="btn-done text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-all" title="Mark as Done">
+                                    <i class="fas fa-check"></i>
+                                </button>` :
+                                `<span class="inline-block w-6" title="Completed"></span>`
+                            }
+                            <button class="btn-edit text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-all" title="Edit">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="btn-delete text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-all" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+                // Update stats based on the *filtered* list
+                updateStats(filteredVideos);
+            };
+
+            /**
+             * Shows or hides the add/edit modal.
+             * @param {boolean} show - True to show, false to hide.
+             * @param {Object|null} [video=null] - The video object to edit (if any).
+             */
+            const toggleModal = (show, video = null) => {
+                if (show) {
+                    if (video) {
+                        // Edit Mode
+                        modalTitle.textContent = 'Edit Video';
+                        videoIdInput.value = video.id;
+                        videoNameInput.value = video.name;
+                        videoLinkInput.value = video.link;
+                        videoStatusInput.value = video.videoStatus;
+                        paymentStatusInput.value = video.paymentStatus;
+                        videoNotesInput.value = video.notes || ''; // Load notes
+                        paymentAmountInput.value = video.paymentAmount || ''; // Load amount
+                        videoPriorityInput.value = video.priority || 'Medium'; // NEW: Load priority
+                    } else {
+                        // Add Mode
+                        modalTitle.textContent = 'Add New Video';
+                        videoForm.reset(); // Resets all fields
+                        videoIdInput.value = ''; // Ensure ID is cleared
+                        videoNotesInput.value = ''; // Clear notes
+                        paymentAmountInput.value = ''; // Clear amount
+                        videoPriorityInput.value = 'Medium'; // NEW: Reset priority
+                    }
+                    // Enable/disable Gemini button based on video name
+                    generateDescButton.disabled = !videoNameInput.value.trim();
+                    setGeminiButtonLoading(false, "✨ Generate"); // Reset button text
+                    modal.classList.remove('hidden');
+                } else {
+                    modal.classList.add('hidden');
+                    videoForm.reset();
+                    videoIdInput.value = '';
+                    videoNotesInput.value = '';
+                    paymentAmountInput.value = ''; // Clear amount on close
+                }
+            };
+
+            // --- EVENT HANDLERS ---
+
+            /**
+             * Handles the submission of the add/edit form.
+             */
+            const handleFormSubmit = (e) => {
+                e.preventDefault();
+                const id = videoIdInput.value;
+                const videoData = {
+                    name: videoNameInput.value,
+                    link: videoLinkInput.value,
+                    videoStatus: videoStatusInput.value,
+                    paymentStatus: paymentStatusInput.value,
+                    notes: videoNotesInput.value, // Save notes
+                    paymentAmount: paymentAmountInput.value, // Save amount
+                    priority: videoPriorityInput.value, // NEW: Save priority
+                };
+
+                if (id) {
+                    // Update existing video
+                    const index = videos.findIndex(v => v.id === id);
+                    if (index > -1) {
+                        videos[index] = { ...videos[index], ...videoData };
+                    }
+                } else {
+                    // Add new video
+                    videoData.id = Date.now().toString(); // Simple unique ID
+                    videos.push(videoData);
+                }
+
+                saveVideos();
+                renderTable();
+                toggleModal(false);
+            };
+
+            /**
+             * Handles clicks on the table body for Edit, Delete, and Mark as Done.
+             */
+            const handleTableClick = (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+
+                const tr = e.target.closest('tr');
+                if (!tr) return; // Click might be on a button in a row being removed
+                const id = tr.dataset.id;
+                if (!id) return;
+
+                
+                if (button.classList.contains('btn-edit')) {
+                    // Edit
+                    const video = videos.find(v => v.id === id);
+                    if (video) {
+                        toggleModal(true, video);
+                    }
+                } else if (button.classList.contains('btn-delete')) {
+                    // Delete
+                    // Use a custom modal for confirmation instead of window.confirm
+                    if (confirm('Are you sure you want to delete this video?')) {
+                        videos = videos.filter(v => v.id !== id);
+                        saveVideos();
+                        renderTable();
+                    }
+                } else if (button.classList.contains('btn-done')) {
+                    // Mark as Done
+                    const index = videos.findIndex(v => v.id === id);
+                    if (index > -1) {
+                        videos[index].videoStatus = 'Done';
+                        saveVideos();
+                        renderTable();
+                    }
+                }
+            };
+
+            /**
+             * NEW: Handles exporting the current video list to a CSV file.
+             */
+            const handleExportCsv = () => {
+                if (videos.length === 0) {
+                    // Yahaan custom alert istemal karein, abhi ke liye console log
+                    console.warn("No videos to export.");
+                    return;
+                }
+
+                const headers = ["id", "name", "videoStatus", "paymentStatus", "paymentAmount", "priority", "link", "notes"];
+                
+                // Helper to escape CSV data
+                const escapeCsv = (str) => {
+                    if (str === null || str === undefined) str = "";
+                    str = String(str);
+                    // Handle quotes, commas, and newlines
+                    if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                };
+
+                // Create CSV rows
+                const csvRows = videos.map(video => {
+                    return headers.map(header => escapeCsv(video[header])).join(',');
+                });
+
+                // Combine headers and rows
+                const csvContent = [headers.join(','), ...csvRows].join('\n');
+
+                // Create and trigger download
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                if (link.href) {
+                    URL.revokeObjectURL(link.href);
+                }
+                link.href = URL.createObjectURL(blob);
+                
+                // Format date for filename
+                const date = new Date();
+                const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+                link.download = `video-tracker-export-${dateStr}.csv`;
+                
+                // Append, click, and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            /**
+             * ✨ Handles the click event for the Generate Description button.
+             */
+            const handleGenerateDescription = async () => {
+                const videoName = videoNameInput.value.trim();
+                if (!videoName) return; // Should be disabled, but as a safeguard
+
+                setGeminiButtonLoading(true);
+                
+                try {
+                    const prompt = `Act as a YouTube content assistant. Based on the video title "${videoName}", generate an SEO-friendly video description and a simple 3-point script outline. Format the output clearly with 'Description:' and 'Outline:' headings. If the title is too vague, ask for more details instead.`;
+                    const generatedText = await callGeminiApi(prompt);
+                    
+                    // Append or replace? Let's append if there's text, replace if empty.
+                    if (videoNotesInput.value.trim().length > 0) {
+                        videoNotesInput.value += `\n\n---\n${generatedText}`;
+                    } else {
+                        videoNotesInput.value = generatedText;
+                    }
+                    
+                    setGeminiButtonLoading(false, "✨ Regenerate");
+                } catch (error) {
+                    // Error is already logged in callGeminiApi
+                    setGeminiButtonLoading(false, "✨ Try Again");
+                    // Show a non-alert, user-facing error
+                    videoNotesInput.value = (videoNotesInput.value ? videoNotesInput.value + "\n\n" : "") + "Error: Could not generate content. Please try again."
+                }
+            };
+
+            /**
+             * Handles the dark mode toggle.
+             */
+            const handleDarkModeToggle = () => {
+                document.documentElement.classList.toggle('dark');
+                if (document.documentElement.classList.contains('dark')) {
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    localStorage.setItem('theme', 'light');
+                }
+            };
+
+            /**
+             * Initializes dark mode based on saved preference or system preference.
+             */
+            const initDarkMode = () => {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            };
+
+            // --- INITIALIZATION & EVENT LISTENERS ---
+
+            // Load initial dark mode state
+            initDarkMode();
+
+            // Load data
+            loadVideos();
+            renderTable();
+
+            // Form
+            videoForm.addEventListener('submit', handleFormSubmit);
+
+            // Modal Controls
+            addNewButtonDesktop.addEventListener('click', () => toggleModal(true));
+            addNewButtonMobile.addEventListener('click', () => toggleModal(true));
+            modalCloseButton.addEventListener('click', () => toggleModal(false));
+            modalCancelButton.addEventListener('click', () => toggleModal(false));
+            modalOverlay.addEventListener('click', () => toggleModal(false));
+
+            // Table Actions (Event Delegation)
+            tableBody.addEventListener('click', handleTableClick);
+
+            // Filters & Search (real-time update)
+            searchBar.addEventListener('input', renderTable);
+            filterVideoStatus.addEventListener('change', renderTable);
+            filterPaymentStatus.addEventListener('change', renderTable);
+
+            // Dark Mode
+            darkModeToggle.addEventListener('click', handleDarkModeToggle);
+
+            // ✨ Gemini Feature Listeners
+            generateDescButton.addEventListener('click', handleGenerateDescription);
+            // Disable/enable Gemini button based on video name input
+            videoNameInput.addEventListener('input', () => {
+                generateDescButton.disabled = !videoNameInput.value.trim();
+            });
+
+            // NEW: Export CSV Listener
+            exportCsvButton.addEventListener('click', handleExportCsv);
+        });
+    </script>
+
+</body>
+</html>
+
+
